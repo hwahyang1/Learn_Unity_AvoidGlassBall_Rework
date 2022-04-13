@@ -10,7 +10,8 @@ using UnityEngine.UI;
  */
 public class GameManager : MonoBehaviour
 {
-	private bool _isGameActive = true;
+	private GameObject gameOverScreen;
+	private bool _isGameActive;
 	public bool isGameActive
 	{
 		get
@@ -48,18 +49,21 @@ public class GameManager : MonoBehaviour
 	[SerializeField] private float glassBallSpawnPeriod = 1f;
 	public float glassBallSpeed = 0.15f;
 	private float glassBallMaxX = 9.5f;
+
+	public Text highScoreText;
+	public Text currentScoreText;
+	[SerializeField] private int defaultScore = 10;
+	[SerializeField] private int bonusScore = 30;
+	private int highScore = 0;
+	private int currentScore;
+	private bool isNewBest;
+
 	private float elapsedTime = 0f;
 
 
 	private void Start()
 	{
-		heartParent = GameObject.Find("Hearts");
-		glassBallParent = GameObject.Find("GlassBalls");
-
-		for (int i = 0; i < 3; i++)
-		{
-			heartParent.transform.GetChild(i).GetComponent<Image>().sprite = heartFull;
-		}
+		InitGame();
 	}
 
 	private void Update()
@@ -79,14 +83,64 @@ public class GameManager : MonoBehaviour
 	}
 
 	/*
+	 * [Method] InitGame()
+	 * 게임을 초기 실행 상태로 설정합니다.
+	 */
+	public void InitGame()
+	{
+		gameOverScreen = GameObject.Find("GameOver");
+		heartParent = GameObject.Find("Hearts");
+		glassBallParent = GameObject.Find("GlassBalls");
+
+		gameOverScreen.SetActive(false);
+
+		currentScore = 0;
+		isNewBest = highScore == 0 ? true : false; // 첫 판은 보너스점수 X
+		isGameActive = true;
+
+		highScoreText.text = "최고 " + highScore + "점";
+		currentScoreText.text = currentScore + "점";
+
+		heart = 3;
+		for (int i = 0; i < 3; i++)
+		{
+			heartParent.transform.GetChild(i).GetComponent<Image>().sprite = heartFull;
+		}
+	}
+
+	/*
+	 * [Method] AddScore()
+	 * 플레이어의 현재 점수를 올리고 점수를 관리합니다.
+	 */
+	public void AddScore()
+	{
+		if (!isGameActive) return;
+
+		currentScore += defaultScore;
+
+		if (currentScore > highScore)
+		{
+			highScore = currentScore;
+			if (!isNewBest)
+			{
+				currentScore += bonusScore;
+				isNewBest = true;
+			}
+		}
+
+		highScoreText.text = "최고 " + highScore + "점";
+		currentScoreText.text = currentScore + "점";
+	}
+
+	/*
 	 * [Method] ChangeHeart(bool isAdd=false)
 	 * 체력을 1씩 변화시킵니다.
 	 * 
-	 * <bool isAdd>
+	 * <bool isAdd=false>
 	 * 체력을 증가시킬 지의 여부를 결정합니다.
 	 * true면 체력을 증가하고, false면 체력을 감소합니다.
 	 */
-	public void ChangeHeart(bool isAdd=false)
+	public void ChangeHeart(bool isAdd = false)
 	{
 		if (!isGameActive) return;
 
@@ -103,6 +157,7 @@ public class GameManager : MonoBehaviour
 			if (heart == 0)
 			{
 				isGameActive = false;
+				gameOverScreen.SetActive(true);
 			}
 		}
 	}

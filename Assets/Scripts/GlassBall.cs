@@ -22,6 +22,7 @@ public class GlassBall : MonoBehaviour
 	{
 		if (transform.position.y <= -maxY)
 		{
+			gameManager.AddScore();
 			Destroy(gameObject);
 		}
 	}
