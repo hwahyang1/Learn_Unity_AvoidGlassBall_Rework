@@ -10,6 +10,8 @@ using UnityEngine.UI;
  */
 public class GameManager : MonoBehaviour
 {
+	private static readonly string highScoreKey = "BestScore";
+
 	private GameObject gameOverScreen;
 	private bool _isGameActive;
 	public bool isGameActive
@@ -54,7 +56,7 @@ public class GameManager : MonoBehaviour
 	public Text currentScoreText;
 	[SerializeField] private int defaultScore = 10;
 	[SerializeField] private int bonusScore = 30;
-	private int highScore = 0;
+	private int highScore;
 	private int currentScore;
 	private bool isNewBest;
 
@@ -63,6 +65,7 @@ public class GameManager : MonoBehaviour
 
 	private void Start()
 	{
+		Application.targetFrameRate = 60;
 		InitGame();
 	}
 
@@ -94,6 +97,16 @@ public class GameManager : MonoBehaviour
 
 		gameOverScreen.SetActive(false);
 
+		if (PlayerPrefs.HasKey(highScoreKey))
+		{
+			highScore = PlayerPrefs.GetInt(highScoreKey);
+		}
+		else
+		{
+			PlayerPrefs.SetInt(highScoreKey, 0);
+			highScore = 0;
+		}
+
 		currentScore = 0;
 		isNewBest = highScore == 0 ? true : false; // 첫 판은 보너스점수 X
 		isGameActive = true;
@@ -120,13 +133,40 @@ public class GameManager : MonoBehaviour
 
 		if (currentScore > highScore)
 		{
-			highScore = currentScore;
 			if (!isNewBest)
 			{
 				currentScore += bonusScore;
 				isNewBest = true;
 			}
+			highScore = currentScore;
 		}
+		
+		highScoreText.text = "최고 " + highScore + "점";
+		currentScoreText.text = currentScore + "점";
+
+		if (currentScore % 50 == 0)
+		{
+			if (glassBallSpawnPeriod > 0.35f)
+			{
+				glassBallSpawnPeriod -= 0.05f;
+			}
+			if (glassBallSpeed < 0.17f)
+			{
+				glassBallSpeed += 0.002f;
+			}
+		}
+	}
+
+	/*
+	 * [Method] ResetScore()
+	 * 플레이어의 최고 점수를 초기화 합니다.
+	 */
+	public void ResetScore()
+	{
+		currentScore = 0;
+		highScore = 0;
+		PlayerPrefs.SetInt(highScoreKey, 0);
+		PlayerPrefs.Save();
 
 		highScoreText.text = "최고 " + highScore + "점";
 		currentScoreText.text = currentScore + "점";
@@ -137,10 +177,10 @@ public class GameManager : MonoBehaviour
 	 * 체력을 1씩 변화시킵니다.
 	 * 
 	 * <bool isAdd=false>
-	 * 체력을 증가시킬 지의 여부를 결정합니다.
+	 * 체력을 증감을 결정합니다.
 	 * true면 체력을 증가하고, false면 체력을 감소합니다.
 	 */
-	public void ChangeHeart(bool isAdd = false)
+	public void ChangeHeart(bool isAdd=false)
 	{
 		if (!isGameActive) return;
 
@@ -158,6 +198,11 @@ public class GameManager : MonoBehaviour
 			{
 				isGameActive = false;
 				gameOverScreen.SetActive(true);
+				if (highScore > PlayerPrefs.GetInt(highScoreKey))
+				{
+					PlayerPrefs.SetInt(highScoreKey, highScore);
+					PlayerPrefs.Save();
+				}
 			}
 		}
 	}
